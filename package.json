@@ -1,0 +1,14 @@
+{
+  "name": "arkagrid",
+  "version": "2.0.0",
+  "description": "ArkaGrid campus energy intelligence: live simulation, 3D digital twin and AI anomaly detection.",
+  "private": true,
+  "scripts": {
+    "setup": "npm install && pip install -r requirements.txt",
+    "start": "python engine_a/anomaly_detection.py --serve --open",
+    "report": "python engine_a/anomaly_detection.py"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  }
+}

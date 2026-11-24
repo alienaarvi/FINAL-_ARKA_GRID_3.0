@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#090b18">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="ArkaGrid campus energy intelligence and digital twin demonstration.">
+    <meta property="og:title" content="ArkaGrid | Campus Energy Intelligence">
+    <meta property="og:description" content="Live campus energy simulation, 3D digital twin and AI anomaly detection.">
+    <meta property="og:type" content="website">
+    <title>ArkaGrid | Campus Energy Intelligence</title>
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23bd9aff'/%3E%3Cstop offset='1' stop-color='%237548d3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Ctext x='32' y='44' font-size='36' font-family='Arial' font-weight='700' text-anchor='middle' fill='white'%3EA%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- THREE.JS IMPORT MAP: uses node_modules when installed, otherwise falls back to a CDN copy -->
+    <script>
+    (function () {
+        var local = "/node_modules/three/";
+        var cdn = "https://cdn.jsdelivr.net/npm/three@0.170.0/";
+        var base = local;
+        try {
+            var probe = new XMLHttpRequest();
+            probe.open("HEAD", local + "build/three.module.js", false);
+            probe.send();
+            if (probe.status !== 200) base = cdn;
+        } catch (e) { base = cdn; }
+        var map = document.createElement("script");
+        map.type = "importmap";
+        map.textContent = JSON.stringify({ imports: {
+            "three": base + "build/three.module.js",
+            "three/addons/": base + "examples/jsm/"
+        } });
+        document.head.appendChild(map);
+        window.__THREE_SOURCE = base === local ? "local (node_modules)" : "CDN fallback";
+    })();
+    </script>
+
+    <script src="app.js" defer></script>
+    <script type="module" src="campus3d.js"></script>
+</head>
+
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div class="app">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+        <a class="brand" href="#overview" aria-label="ArkaGrid home">
+            <div class="brand-icon">A</div>
+            <div>
+                <h2>ARKAGRID</h2>
+                <small>ENERGY INTELLIGENCE</small>
+            </div>
+        </a>
+
+        <p class="nav-label">WORKSPACE</p>
+        <nav aria-label="Primary" class="nav-list">
+            <a class="nav active" href="#overview" data-section="overview"><span>◈</span> Overview</a>
+            <a class="nav" href="#campus" data-section="campus"><span>▦</span> Building Network</a>
+            <a class="nav" href="#digital-twin" data-section="digital-twin"><span>⬡</span> Digital Twin</a>
+            <a class="nav" href="#simulation" data-section="simulation"><span>⌘</span> Simulation Lab</a>
+            <a class="nav" href="#intelligence" data-section="intelligence"><span>✧</span> AI Intelligence</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="system-status" id="sidebarStatus">
+                <span class="live-dot"></span>
+                SYSTEM ONLINE
+            </div>
+            <small>DEMO ENVIRONMENT<br>SYNTHETIC DATA</small>
+        </div>
+    </aside>
+
+    <!-- ================= MAIN ================= -->
+    <main class="main" id="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">CAMPUS ENERGY NETWORK / 01</p>
+                <h1>Energy Command Centre</h1>
+                <p class="muted">Monitor. Predict. Optimise.</p>
+            </div>
+
+            <div class="top-actions">
+                <div class="theme-switch" id="themeSwitch" role="group" aria-label="Accent theme"></div>
+                <button class="icon-btn" id="helpBtn" type="button" aria-haspopup="dialog" title="Keyboard shortcuts (?)">?</button>
+
+                <div class="top-status" id="topStatus">
+                    <span class="live-dot"></span>
+                    <span id="topStatusText">AI ENGINE ACTIVE</span>
+                    <div class="avatar">AG</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- HERO -->
+        <section class="hero" id="overview" aria-labelledby="heroTitle">
+            <div class="hero-content">
+                <span class="tag">✦ INTELLIGENT ENERGY SYSTEM</span>
+
+                <h2 id="heroTitle">Powering a <span>Smarter Campus.</span></h2>
+
+                <p>
+                    Understand campus energy behaviour through AI-driven
+                    analytics, anomaly detection and predictive simulation.
+                </p>
+
+                <a href="#digital-twin" class="hero-btn">Explore Digital Twin ↗</a>
+            </div>
+
+            <div class="hero-graphic" aria-hidden="true">
+                <div class="orbit orbit-one"></div>
+                <div class="orbit orbit-two"></div>
+                <div class="orbit orbit-three"></div>
+                <div class="hero-core">A</div>
+                <span class="energy energy-one">⚡</span>
+                <span class="energy energy-two">✧</span>
+                <span class="energy energy-three">◈</span>
+            </div>
+        </section>
+
+        <!-- LIVE STRIP (mirrors the simulation in real time) -->
+        <section class="live-strip" aria-label="Live simulation summary" aria-live="off">
+            <div class="live-chip"><span>SIM CLOCK</span><strong id="stripClock">--:--</strong></div>
+            <div class="live-chip"><span>CAMPUS DEMAND</span><strong id="stripDemand">-- kW</strong></div>
+            <div class="live-chip"><span>SOLAR</span><strong id="stripSolar">-- kW</strong></div>
+            <div class="live-chip"><span>GRID IMPORT</span><strong id="stripGrid">-- kW</strong></div>
+            <div class="live-chip"><span>BATTERY</span><strong id="stripBattery">--%</strong></div>
+        </section>
+
+        <!-- CAMPUS OVERVIEW -->
+        <section class="section-heading">
+            <div>
+                <p class="eyebrow">LIVE ANALYTICS</p>
+                <h2>Campus Overview</h2>
+                <p class="muted">Illustrative model values, not live meter readings.</p>
+            </div>
+
+            <span class="tag">● SIMULATED DATA</span>
+        </section>
+
+        <!-- STATISTICS -->
+        <section class="stats" aria-label="Key figures">
+
+            <article class="stat-card">
+                <p>ESTIMATED DAILY ENERGY</p>
+                <h2 id="totalEnergy">— <small>kWh/day</small></h2>
+                <span class="positive">Model-based estimate</span>
+            </article>
+
+            <article class="stat-card">
+                <p>MONITORED BUILDINGS</p>
+                <h2 id="buildingCount">05</h2>
+                <span class="positive">Simulated campus nodes</span>
+            </article>
+
+            <article class="stat-card">
+                <p>ANOMALY ENGINE</p>
+                <h2 id="anomalyCount">—</h2>
+                <span class="warning" id="anomalyStatusText">Connecting to Python engine</span>
+            </article>
+
+            <article class="stat-card">
+                <p>SIMULATION DIFFERENCE</p>
+                <h2 id="savingStat">—</h2>
+                <span class="positive">Updates after simulation</span>
+            </article>
+
+        </section>
+
+        <!-- CHART AND INTELLIGENCE FEED -->
+        <section class="content-grid">
+
+            <article class="panel chart-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">ENERGY PATTERNS</p>
+                        <h3>Campus Demand Profile</h3>
+                    </div>
+
+                    <span class="tag">24-HOUR MODEL</span>
+                </div>
+
+                <div class="chart-wrap">
+                    <canvas id="energyChart" role="img" aria-label="24-hour campus demand and solar generation chart"></canvas>
+                </div>
+
+                <div class="chart-legend">
+                    <span><i class="legend-purple"></i> Estimated power demand</span>
+                    <span>Hourly profile · kW · hover for details</span>
+                </div>
+            </article>
+
+            <article class="panel feed-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">SYSTEM MONITORING</p>
+                        <h3>Intelligence Feed</h3>
+                    </div>
+
+                    <span class="live-dot"></span>
+                </div>
+
+                <div class="alert-item">
+                    <span class="alert-icon">⚡</span>
+                    <div>
+                        <b>Energy model initialised</b>
+                        <p>Five simulated campus buildings</p>
+                        <small>Demo environment ready</small>
+                    </div>
+                </div>
+
+                <div class="alert-item">
+                    <span class="alert-icon cyan">⌁</span>
+                    <div>
+                        <b>Forecast module</b>
+                        <p>6-hour look-ahead of grid import and cost</p>
+                        <small>See the Command Center in the Simulation Lab</small>
+                    </div>
+                </div>
+
+                <div class="alert-item">
+                    <span class="alert-icon purple">✧</span>
+                    <div>
+                        <b>Anomaly detection</b>
+                        <p id="feedAnomalyText" aria-live="polite">Waiting for AI engine results.</p>
+                        <small id="feedAnomalyTime">Connecting to dataset...</small>
+                    </div>
+                </div>
+            </article>
+
+        </section>
+
+        <!-- BUILDING NETWORK -->
+        <section id="campus" class="page-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">CAMPUS NETWORK / 01</p>
+                    <h2>Building Network</h2>
+                    <p class="muted">Select a building to inspect its simulated load.</p>
+                </div>
+
+                <span class="tag">05 CONNECTED NODES</span>
+            </div>
+
+            <div class="building-grid" id="buildingGrid"></div>
+
+        </section>
+
+        <!-- 3D DIGITAL TWIN -->
+        <section id="digital-twin" class="page-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">SPATIAL INTELLIGENCE / CAMPUS 01</p>
+                    <h2>Campus Digital Twin</h2>
+                    <p class="muted">
+                        Explore the simulated campus. Select a building and
+                        rotate the view to inspect the network.
+                    </p>
+                </div>
+
+                <span class="tag">● 3D SIMULATION</span>
+            </div>
+
+            <div class="twin-panel" id="twinPanel">
+
+                <div class="twin-toolbar">
+                    <div>
+                        <span class="toolbar-icon">⬡</span>
+                        CAMPUS SPATIAL VIEW
+                    </div>
+
+                    <div class="toolbar-right">
+                        <span class="toolbar-status">
+                            <span class="live-dot"></span>
+                            SIMULATION ACTIVE
+                        </span>
+                        <button class="icon-btn" id="twinFullscreen" type="button" title="Toggle fullscreen" aria-label="Toggle fullscreen">⛶</button>
+                    </div>
+                </div>
+
+                <!-- DIGITAL TWIN HUD (docked above the canvas) -->
+                <div class="arkagrid-hud" id="arkagridHUD">
+                    <div class="hud-topline">
+                        <span class="hud-live-dot"></span>
+                        <span>ARKAGRID LIVE INTELLIGENCE</span>
+                        <span class="hud-clock" id="hudClock">09:00</span>
+                    </div>
+
+                    <div class="hud-main">
+                        <div class="hud-metric">
+                            <span>Campus demand</span>
+                            <strong id="hudDemand">-- kW</strong>
+                        </div>
+
+                        <div class="hud-metric">
+                            <span>Solar generation</span>
+                            <strong id="hudSolar">-- kW</strong>
+                        </div>
+
+                        <div class="hud-metric">
+                            <span>Grid import</span>
+                            <strong id="hudGrid">-- kW</strong>
+                        </div>
+
+                        <div class="hud-metric">
+                            <span>Battery power</span>
+                            <strong id="hudBattery">-- kW</strong>
+                        </div>
+                    </div>
+
+                    <div class="hud-battery">
+                        <div class="hud-section-heading">
+                            <span>BATTERY STORAGE</span>
+                            <strong id="hudBatterySOC">60%</strong>
+                        </div>
+
+                        <div class="hud-progress-track">
+                            <div class="hud-progress-fill" id="hudBatteryFill"></div>
+                        </div>
+                    </div>
+
+                    <div class="hud-footer">
+                        <span class="hud-status-dot"></span>
+                        <span id="hudStatus">SYNTHETIC SIMULATION ACTIVE</span>
+                    </div>
+                </div>
+
+                <!-- THREE.JS CANVAS CONTAINER -->
+                <div id="campus3d">
+                    <div class="loading-3d" id="loading3d">
+                        <span class="loading-orbit"></span>
+                        <span id="loading3dText">INITIALISING CAMPUS ENVIRONMENT...</span>
+                    </div>
+                </div>
+
+                <div class="twin-controls-hint">
+                    <span>🖱 Drag to rotate</span>
+                    <span>Scroll to zoom</span>
+                    <span>Click a building to inspect</span>
+                    <span>Press <kbd>?</kbd> for shortcuts</span>
+                </div>
+
+                <div class="twin-detail" id="twinDetail">
+                    <span class="live-dot"></span>
+                    Select a building in the 3D campus to inspect its energy profile.
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SIMULATION LAB -->
+        <section id="simulation" class="page-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">WHAT-IF ANALYSIS / 02</p>
+                    <h2>Simulation Laboratory</h2>
+                    <p class="muted">
+                        Change campus conditions and observe the estimated
+                        energy response.
+                    </p>
+                </div>
+
+                <span class="tag">INTERACTIVE MODEL</span>
+            </div>
+
+            <div class="simulation-grid">
+
+                <article class="panel controls">
+
+                    <div class="panel-heading">
+                        <div>
+                            <p class="eyebrow">INPUT PARAMETERS</p>
+                            <h3>Simulation Controls</h3>
+                        </div>
+
+                        <span class="control-symbol">⌘</span>
+                    </div>
+
+                    <label for="buildingSelect">Select building</label>
+
+                    <select id="buildingSelect">
+                        <option value="Academic Block">Academic Block</option>
+                        <option value="Laboratory">Laboratory</option>
+                        <option value="Library">Library</option>
+                        <option value="Administration">Administration</option>
+                        <option value="Hostel">Hostel</option>
+                    </select>
+
+                    <div class="control-group">
+                        <div class="control-row">
+                            <label for="occupancy">Occupancy level</label>
+                            <b id="occupancyValue">70%</b>
+                        </div>
+
+                        <input id="occupancy" type="range" min="0" max="100" value="70">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-row">
+                            <label for="operatingHours">Operating hours</label>
+                            <b id="hoursValue">10 hours</b>
+                        </div>
+
+                        <input id="operatingHours" type="range" min="1" max="24" value="10">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-row">
+                            <label for="extraLoad">Additional load</label>
+                            <b id="loadValue">0%</b>
+                        </div>
+
+                        <input id="extraLoad" type="range" min="0" max="100" value="0">
+                    </div>
+
+                    <button id="simulateBtn" class="primary-btn" type="button">RUN SIMULATION ↗</button>
+                    <button id="resetBtn" class="secondary-btn" type="button">RESET PARAMETERS</button>
+
+                </article>
+
+                <article class="panel results" id="resultsPanel">
+
+                    <p class="eyebrow">SIMULATION OUTPUT</p>
+                    <h3>Energy Scenario Analysis</h3>
+
+                    <div class="result-number" id="scenarioEnergy">— <small>kWh/day</small></div>
+
+                    <p class="muted">Estimated daily energy use under selected conditions.</p>
+
+                    <div class="result-divider"></div>
+
+                    <div class="result-row">
+                        <span>Reference scenario</span>
+                        <b id="baselineEnergy">— kWh/day</b>
+                    </div>
+
+                    <div class="result-row">
+                        <span>Simulated scenario</span>
+                        <b id="currentEnergy">— kWh/day</b>
+                    </div>
+
+                    <div class="result-row">
+                        <span>Potential difference</span>
+                        <b id="difference">—</b>
+                    </div>
+
+                    <div class="recommendation" id="simulationMessage" aria-live="polite">
+                        Adjust the controls and run your first simulation.
+                    </div>
+
+                    <p class="model-note">
+                        Model assumption: nominal building load is adjusted
+                        using occupancy, operating hours and additional load.
+                        Results are estimates, not measured savings.
+                    </p>
+
+                </article>
+
+            </div>
+            <!-- app.js appends the Power Balance and Command Center panels here -->
+        </section>
+
+        <!-- AI INTELLIGENCE -->
+        <section id="intelligence" class="page-section">
+
+            <div class="panel intelligence-panel">
+
+                <div>
+                    <p class="eyebrow">ARKAGRID AI CORE</p>
+                    <h2>From data to decisions.</h2>
+
+                    <p class="muted">
+                        Anomaly detection · Demand forecasting ·
+                        Explainable recommendations
+                    </p>
+
+                    <div class="ai-tags">
+                        <span>ANOMALY DETECTION</span>
+                        <span>LOAD FORECASTING</span>
+                        <span>EXPLAINABLE AI</span>
+                    </div>
+                </div>
+
+                <div class="ai-symbol" aria-hidden="true">✧</div>
+
+            </div>
+
+            <!-- ANOMALY DETECTION MONITOR -->
+            <div class="section-heading anomaly-heading">
+                <div>
+                    <p class="eyebrow">ENGINE A / MACHINE LEARNING</p>
+                    <h2>Anomaly Detection Monitor</h2>
+                    <p class="muted">
+                        Isolation Forest identifies unusual energy-consumption
+                        patterns across campus buildings, backed by an
+                        on-device edge detector.
+                    </p>
+                </div>
+
+                <span class="tag" id="anomalyModelStatus">CONNECTING TO ENGINE</span>
+            </div>
+
+            <!-- ANOMALY SUMMARY METRICS -->
+            <div class="stats anomaly-stats">
+
+                <article class="stat-card">
+                    <p>UNUSUAL READINGS</p>
+                    <h2 id="anomalyTotal">—</h2>
+                    <span class="warning">AI-identified records</span>
+                </article>
+
+                <article class="stat-card">
+                    <p>HIGH SEVERITY</p>
+                    <h2 id="anomalyHigh">—</h2>
+                    <span class="warning">High and critical alerts</span>
+                </article>
+
+                <article class="stat-card">
+                    <p>AFFECTED BUILDINGS</p>
+                    <h2 id="anomalyBuildings">—</h2>
+                    <span class="positive">Campus nodes monitored</span>
+                </article>
+
+                <article class="stat-card">
+                    <p>TOTAL DATA READINGS</p>
+                    <h2 id="anomalyReadings">—</h2>
+                    <span class="positive">Historical + live synthetic data</span>
+                </article>
+
+            </div>
+
+            <!-- ANOMALY EVENT LIST -->
+            <article class="panel anomaly-panel">
+
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">DETECTION LOG</p>
+                        <h3>Flagged Energy Events</h3>
+                    </div>
+
+                    <button id="refreshAnomalies" class="secondary-btn refresh-btn" type="button">↻ REFRESH RESULTS</button>
+                </div>
+
+                <div id="anomalyList" class="anomaly-list" aria-live="polite">
+                    <div class="anomaly-empty">Connecting to the anomaly detection engine...</div>
+                </div>
+
+                <div class="anomaly-data-note" id="anomalyDataNote">Waiting for Python engine results.</div>
+
+            </article>
+
+            <p class="model-note">
+                These results are generated from synthetic demonstration
+                data. An anomaly is a statistically unusual reading and
+                does not automatically indicate equipment failure.
+            </p>
+
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <span>ARKAGRID © 2026 · CAMPUS ENERGY INTELLIGENCE</span>
+            <span>DEMO MODE · SYNTHETIC DATA</span>
+        </footer>
+
+    </main>
+</div>
+
+<!-- KEYBOARD SHORTCUTS -->
+<dialog class="ag-help" id="helpDialog" aria-labelledby="helpTitle">
+    <h3 id="helpTitle">Keyboard shortcuts</h3>
+    <div class="kbd-grid">
+        <span><kbd>1</kbd>–<kbd>5</kbd></span><span>Select a building</span>
+        <span><kbd>F</kbd></span><span>Inject a fault into the selected building</span>
+        <span><kbd>P</kbd></span><span>Pause / resume the simulation</span>
+        <span><kbd>R</kbd></span><span>Reset the energy model</span>
+        <span><kbd>V</kbd></span><span>Cycle 3D camera view</span>
+        <span><kbd>C</kbd></span><span>Start / stop the guided building tour</span>
+        <span><kbd>H</kbd></span><span>Show / hide 3D labels</span>
+        <span><kbd>?</kbd></span><span>Open this help</span>
+    </div>
+    <form method="dialog"><button class="primary-btn" type="submit">GOT IT</button></form>
+</dialog>
+
+<noscript>
+    <p style="position:fixed;inset:auto 0 0 0;padding:14px;background:#2a1020;color:#ffb3bd;text-align:center;z-index:99">
+        ArkaGrid needs JavaScript to run the simulation and the 3D digital twin.
+    </p>
+</noscript>
+
+<!-- ================= SHELL BEHAVIOUR (theme, scrollspy, fullscreen, status) ================= -->
+<script>
+(() => {
+    const $ = id => document.getElementById(id);
+    const safe = fn => { try { return fn(); } catch (_) { return null; } };
+
+    /* Accent theme switcher (persisted) */
+    const THEMES = [
+        ["violet", "#a57aff"], ["cyan", "#4fc3f7"], ["emerald", "#3ddc97"], ["amber", "#ffb347"]
+    ];
+    const switcher = $("themeSwitch");
+    function applyTheme(name) {
+        if (name === "violet") document.documentElement.removeAttribute("data-theme");
+        else document.documentElement.dataset.theme = name;
+        switcher.querySelectorAll(".theme-dot").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.theme === name)));
+        safe(() => localStorage.setItem("arkagrid.theme", name));
+    }
+    THEMES.forEach(([name, color]) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "theme-dot";
+        b.dataset.theme = name;
+        b.style.background = color;
+        b.setAttribute("aria-label", `${name} theme`);
+        b.title = `${name[0].toUpperCase()}${name.slice(1)} theme`;
+        b.addEventListener("click", () => applyTheme(name));
+        switcher.appendChild(b);
+    });
+    applyTheme(safe(() => localStorage.getItem("arkagrid.theme")) || "violet");
+
+    /* Scroll-spy for the sidebar */
+    const links = [...document.querySelectorAll(".nav[data-section]")];
+    if ("IntersectionObserver" in window) {
+        const spy = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                links.forEach(a => a.classList.toggle("active", a.dataset.section === entry.target.id));
+            });
+        }, { rootMargin: "-35% 0px -55% 0px" });
+        links.forEach(a => { const s = $(a.dataset.section); if (s) spy.observe(s); });
+    }
+
+    /* Fullscreen for the 3D panel */
+    const fsBtn = $("twinFullscreen"), panel = $("twinPanel");
+    fsBtn.addEventListener("click", () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (panel.requestFullscreen) panel.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener("fullscreenchange", () => {
+        fsBtn.textContent = document.fullscreenElement ? "🗗" : "⛶";
+        window.dispatchEvent(new Event("resize"));
+    });
+
+    /* Keyboard help */
+    const dialog = $("helpDialog");
+    const openHelp = () => { if (dialog.showModal && !dialog.open) dialog.showModal(); };
+    $("helpBtn").addEventListener("click", openHelp);
+    document.addEventListener("keydown", e => {
+        if (e.target.matches?.("input,select,textarea")) return;
+        if (e.key === "?") { e.preventDefault(); openHelp(); }
+    });
+
+    /* Engine status mirrors into the top bar + sidebar */
+    const engineTag = $("anomalyModelStatus");
+    function syncStatus() {
+        const text = (engineTag.textContent || "").toUpperCase();
+        const offline = text.includes("OFFLINE") || text.includes("ISSUE");
+        $("topStatusText").textContent = offline ? "EDGE MODE · ENGINE OFFLINE" : "AI ENGINE ACTIVE";
+        $("topStatus").classList.toggle("offline", offline);
+        $("sidebarStatus").lastChild.textContent = offline ? " EDGE MODE" : " SYSTEM ONLINE";
+        $("sidebarStatus").classList.toggle("offline", offline);
+    }
+    new MutationObserver(syncStatus).observe(engineTag, { childList: true, characterData: true, subtree: true });
+    syncStatus();
+
+    /* Live strip mirrors the HUD */
+    const mirror = [["stripClock", "hudClock"], ["stripDemand", "hudDemand"], ["stripSolar", "hudSolar"], ["stripGrid", "hudGrid"]];
+    setInterval(() => {
+        mirror.forEach(([to, from]) => { const s = $(from), d = $(to); if (s && d && d.textContent !== s.textContent) d.textContent = s.textContent; });
+        const soc = $("hudBatterySOC"), b = $("stripBattery");
+        if (soc && b) b.textContent = soc.textContent;
+    }, 500);
+
+    /* 3D load failure hint */
+    setTimeout(() => {
+        const l = $("loading3d");
+        if (l && l.style.display !== "none" && !l.classList.contains("hidden")) {
+            $("loading3dText").textContent = "3D VIEW COULD NOT LOAD. RUN: npm install  (then refresh)";
+        }
+    }, 10000);
+})();
+</script>
+</body>
+</html>
